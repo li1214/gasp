@@ -23,3 +23,6 @@ pnpm-debug.log*
 服务器信息.txt
 数据库基础信息.txt
 存在问题.txt
+
+# codex local git metadata
+.codex_gitmeta/

@@ -8,17 +8,10 @@ import { AdminReviewActions } from "@/components/admin-review-actions";
 import { cnDate, formatPrice } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
+import { listingStatusLabel } from "@/lib/status-label";
 
 function statusLabel(status: string) {
-  const map: Record<string, string> = {
-    DRAFT: "草稿",
-    PENDING: "待审核",
-    APPROVED: "已上架",
-    REJECTED: "已驳回",
-    OFFLINE: "已下架",
-    SOLD: "已售出"
-  };
-  return map[status] || status;
+  return listingStatusLabel(status);
 }
 
 function statusClass(status: string) {
@@ -116,14 +109,14 @@ export default async function ConsoleListingsPage({ searchParams }: ConsoleListi
       <section className="console-panel">
         <header className="console-panel-head">
           <h2 className="text-sm font-semibold text-slate-700">账号列表（{listings.length}）</h2>
-          <form method="get" className="grid gap-2 sm:grid-cols-2 xl:grid-cols-[1.6fr_1fr_1fr_1fr_auto_auto]">
+          <form method="get" className="console-filter-grid">
             <input
-              className="field !py-2"
+              className="field !py-2.5"
               name="q"
               defaultValue={keyword}
               placeholder="搜索标题/服务器/赛季服/卖家/联系方式"
             />
-            <select className="field !py-2" name="status" defaultValue={statusRaw}>
+            <select className="field !py-2.5" name="status" defaultValue={statusRaw}>
               <option value="">全部状态</option>
               <option value="DRAFT">草稿</option>
               <option value="PENDING">待审核</option>
@@ -132,26 +125,68 @@ export default async function ConsoleListingsPage({ searchParams }: ConsoleListi
               <option value="OFFLINE">已下架</option>
               <option value="SOLD">已售出</option>
             </select>
-            <select className="field !py-2" name="accountType" defaultValue={accountTypeRaw}>
+            <select className="field !py-2.5" name="accountType" defaultValue={accountTypeRaw}>
               <option value="">全部类型</option>
               <option value="LINGXI_OFFICIAL">灵犀官服</option>
               <option value="CHANNEL">渠道服</option>
             </select>
-            <select className="field !py-2" name="recommended" defaultValue={recommendedRaw}>
+            <select className="field !py-2.5" name="recommended" defaultValue={recommendedRaw}>
               <option value="">全部推荐状态</option>
               <option value="true">仅推荐账号</option>
               <option value="false">仅非推荐账号</option>
             </select>
-            <button className="btn !py-2 !px-3 text-xs" type="submit">
+            <button className="btn !py-2.5 !px-3 text-xs min-h-[44px]" type="submit">
               搜索
             </button>
-            <Link className="console-outline-btn justify-center !py-2 !px-3" href="/console/listings">
+            <Link className="console-outline-btn justify-center !py-2.5 !px-3 min-h-[44px]" href="/console/listings">
               重置
             </Link>
           </form>
         </header>
 
-        <div className="console-panel-body console-table-wrap">
+        <div className="console-panel-body lg:hidden space-y-3">
+          {listings.map((item: any) => (
+            <article key={item.id} className="console-mobile-card">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-semibold text-slate-900 line-clamp-2">{item.title}</p>
+                  <p className="text-xs text-slate-500 mt-1 line-clamp-1">
+                    卖家：{item.seller.nickname}（{item.seller.phone}）
+                  </p>
+                </div>
+                <p className="text-base font-black text-[#1f5fc6] whitespace-nowrap">¥{formatPrice(item.priceCents)}</p>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                <span className={statusClass(item.status)}>{statusLabel(item.status)}</span>
+                <span className="console-badge">{item.accountType === "LINGXI_OFFICIAL" ? "灵犀官服" : "渠道服"}</span>
+                <span className="console-badge">{item.hasBigTransfer ? "有大跨" : "无大跨"}</span>
+                <span className="console-badge">{item.supportBargain ? "可砍价" : "不议价"}</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mt-3 text-xs text-slate-600">
+                <p>赛季服：{item.seasonServer || "-"}</p>
+                <p>服务器：{item.serverName || "-"}</p>
+                <p>更新时间：{cnDate(item.updatedAt)}</p>
+                <div>
+                  <AdminListingRecommendButton listingId={item.id} recommended={!!item.isRecommended} />
+                </div>
+              </div>
+
+              <div className="mt-3 space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  <Link href={`/console/listings/${item.id}/edit`} className="console-outline-btn min-h-[44px]">
+                    编辑账号
+                  </Link>
+                  <AdminListingDeleteButton listingId={item.id} title={item.title} />
+                </div>
+                <AdminReviewActions listingId={item.id} />
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="hidden lg:block console-panel-body console-table-wrap">
           <table className="console-table" style={{ minWidth: "1330px" }}>
             <thead>
               <tr>

@@ -5,13 +5,10 @@ import { UserStatusSelect } from "@/components/user-status-select";
 import { cnDate } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
+import { userStatusLabel } from "@/lib/status-label";
 
 function roleLabel(role: "USER" | "ADMIN") {
   return role === "ADMIN" ? "管理员" : "普通用户";
-}
-
-function statusLabel(status: "ACTIVE" | "BANNED") {
-  return status === "ACTIVE" ? "正常" : "封禁";
 }
 
 function statusBadgeClass(status: "ACTIVE" | "BANNED") {
@@ -48,7 +45,42 @@ export default async function ConsoleUsersPage() {
           <h2 className="text-sm font-semibold text-slate-700">用户列表</h2>
         </header>
 
-        <div className="console-panel-body console-table-wrap">
+        <div className="console-panel-body lg:hidden space-y-3">
+          {users.map((item: any) => (
+            <article key={item.id} className="console-mobile-card">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-semibold text-slate-900">{item.nickname}</p>
+                  <p className="text-xs text-slate-500 mt-1">{item.phone}</p>
+                </div>
+                <span className={statusBadgeClass(item.status)}>{userStatusLabel(item.status)}</span>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                <span className={item.verifiedAt ? "console-badge approved" : "console-badge pending"}>
+                  {item.verifiedAt ? "已实名" : "未实名"}
+                </span>
+                <span className="console-badge">{roleLabel(item.role)}</span>
+                <span className="console-badge">发布 {item._count.listings}</span>
+              </div>
+
+              <p className="text-xs text-slate-500 mt-3">注册时间：{cnDate(item.createdAt)}</p>
+
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                <div>
+                  <p className="text-[11px] text-slate-500 mb-1">角色调整</p>
+                  <UserRoleSelect userId={item.id} role={item.role} />
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-500 mb-1">状态调整</p>
+                  <UserStatusSelect userId={item.id} status={item.status} />
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="hidden lg:block console-panel-body console-table-wrap">
           <table className="console-table">
             <thead>
               <tr>
@@ -77,7 +109,7 @@ export default async function ConsoleUsersPage() {
                     <span className="console-badge">{roleLabel(item.role)}</span>
                   </td>
                   <td>
-                    <span className={statusBadgeClass(item.status)}>{statusLabel(item.status)}</span>
+                    <span className={statusBadgeClass(item.status)}>{userStatusLabel(item.status)}</span>
                   </td>
                   <td>{item._count.listings}</td>
                   <td>{cnDate(item.createdAt)}</td>

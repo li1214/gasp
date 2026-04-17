@@ -367,7 +367,7 @@ a {
 .console-main {
   flex: 1;
   min-width: 0;
-  padding: 20px;
+  padding: 12px;
 }
 
 .console-page {
@@ -517,6 +517,86 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+.console-mobile-nav {
+  border: 1px solid #d3e2f7;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(72, 130, 235, 0.2), transparent 40%),
+    linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+  box-shadow: 0 10px 24px rgba(17, 47, 98, 0.1);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.console-mobile-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.console-mobile-kicker {
+  margin: 0;
+  color: #325179;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.console-mobile-user {
+  margin: 4px 0 0;
+  color: #0f2d60;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.console-mobile-actions {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.console-mobile-grid {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.console-mobile-link {
+  border: 1px solid #ccdcf4;
+  border-radius: 12px;
+  background: #fff;
+  color: #1a427f;
+  min-height: 44px;
+  padding: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.console-mobile-link:hover {
+  border-color: #7ea6e7;
+  background: #eff5ff;
+}
+
+.console-filter-grid {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr;
+}
+
+.console-mobile-card {
+  border: 1px solid #d7e4f8;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(19, 49, 101, 0.08);
+  padding: 12px;
 }
 
 .upload-picker {
@@ -1083,6 +1163,7 @@ a {
 
 .admin-action-group {
   display: inline-flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
@@ -1091,8 +1172,11 @@ a {
   border-radius: 10px;
   background: #fff;
   color: #183b77;
-  padding: 4px 9px;
+  min-height: 44px;
+  padding: 9px 12px;
   font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .admin-action-btn.primary {
@@ -1186,6 +1270,10 @@ a {
     padding: 18px;
   }
 
+  .console-main {
+    padding: 20px;
+  }
+
   .grid-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1208,6 +1296,10 @@ a {
 
   .console-stat-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .console-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .compact-list {
@@ -1270,6 +1362,10 @@ a {
 
   .site-content {
     padding-bottom: 0;
+  }
+
+  .console-filter-grid {
+    grid-template-columns: 1.6fr 1fr 1fr 1fr auto auto;
   }
 }
 

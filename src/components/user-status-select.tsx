@@ -15,7 +15,7 @@ export function UserStatusSelect({
 
   return (
     <select
-      className="field !py-1.5 !text-xs"
+      className="field !py-2.5 !text-xs min-h-[44px]"
       value={status}
       disabled={loading}
       onChange={async (event) => {

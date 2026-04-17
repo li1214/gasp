@@ -16,6 +16,7 @@ export async function POST(
     where: { id: params.id },
     select: {
       id: true,
+      priceCents: true,
       supportBargain: true,
       sellerId: true
     }
@@ -35,6 +36,22 @@ export async function POST(
 
   const payload = await request.json().catch(() => ({}));
 
+  const rawOfferPrice =
+    typeof payload.offerPrice === "string" || typeof payload.offerPrice === "number"
+      ? Number(payload.offerPrice)
+      : NaN;
+  if (!Number.isFinite(rawOfferPrice) || rawOfferPrice <= 0) {
+    return NextResponse.json({ error: "请输入有效的砍价金额" }, { status: 400 });
+  }
+
+  const offerPriceCents = Math.round(rawOfferPrice * 100);
+  if (offerPriceCents <= 0) {
+    return NextResponse.json({ error: "请输入有效的砍价金额" }, { status: 400 });
+  }
+  if (offerPriceCents >= listing.priceCents) {
+    return NextResponse.json({ error: "砍价金额需低于当前标价" }, { status: 400 });
+  }
+
   const pending = await prisma.bargain.findFirst({
     where: {
       userId: user.id,
@@ -52,7 +69,7 @@ export async function POST(
     data: {
       userId: user.id,
       listingId: params.id,
-      message: typeof payload.message === "string" ? payload.message.slice(0, 120) : null
+      offerPriceCents
     }
   });
 

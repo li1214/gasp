@@ -5,15 +5,7 @@ import Image from "next/image";
 import { cnDate, formatPrice } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
-
-const LISTING_STATUS_LABEL: Record<string, string> = {
-  DRAFT: "草稿",
-  PENDING: "审核中",
-  APPROVED: "在售",
-  REJECTED: "已驳回",
-  OFFLINE: "已下架",
-  SOLD: "已售出"
-};
+import { listingStatusLabel } from "@/lib/status-label";
 
 export default async function MyFavoritesPage() {
   const user = await requireUser();
@@ -87,7 +79,7 @@ export default async function MyFavoritesPage() {
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {favorites.map((item: any) => {
         const listing = item.listing;
-        const statusLabel = LISTING_STATUS_LABEL[listing.status] || listing.status;
+        const statusLabel = listingStatusLabel(listing.status);
         const statusTone =
           listing.status === "APPROVED"
             ? "border-[#b5dfc8] bg-[#ecfff3] text-[#17613b]"

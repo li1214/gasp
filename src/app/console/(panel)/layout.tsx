@@ -13,7 +13,7 @@ export default async function ConsoleLayout({
 
   return (
     <div className="console-root">
-      <aside className="console-sidebar">
+      <aside className="console-sidebar hidden lg:flex">
         <div>
           <Link href="/console" className="console-logo">SGZZ Console</Link>
           <p className="console-subtitle">三国志战略版账号展示平台后台</p>
@@ -47,7 +47,37 @@ export default async function ConsoleLayout({
         </div>
       </aside>
 
-      <main className="console-main">{children}</main>
+      <main className="console-main">
+        <section className="console-mobile-nav lg:hidden">
+          <div className="console-mobile-head">
+            <div>
+              <p className="console-mobile-kicker">SGZZ Console</p>
+              <p className="console-mobile-user">{user?.nickname || "未登录"} · {user?.role === "ADMIN" ? "管理员" : "普通权限"}</p>
+            </div>
+            <div className="console-mobile-actions">
+              <Link href="/my" className="icon-chip">个人中心</Link>
+              <LogoutButton className="icon-chip" />
+            </div>
+          </div>
+
+          <nav className="console-mobile-grid">
+            <Link href="/console" className="console-mobile-link">
+              <BarChart3 size={16} /> 数据总览
+            </Link>
+            <Link href="/console/users" className="console-mobile-link">
+              <Users size={16} /> 用户权限
+            </Link>
+            <Link href="/console/listings" className="console-mobile-link">
+              <ListChecks size={16} /> 账号管理
+            </Link>
+            <Link href="/" className="console-mobile-link">
+              <Home size={16} /> 返回前台
+            </Link>
+          </nav>
+        </section>
+
+        {children}
+      </main>
     </div>
   );
 }

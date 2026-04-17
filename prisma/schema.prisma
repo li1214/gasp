@@ -159,6 +159,7 @@ model Bargain {
   userId    String
   listingId String
   message   String?
+  offerPriceCents Int?
   status    BargainStatus @default(PENDING)
   handledAt DateTime?
   createdAt DateTime @default(now())

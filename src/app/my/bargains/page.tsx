@@ -5,12 +5,7 @@ import { BargainDecisionActions } from "@/components/bargain-decision-actions";
 import { cnDate, formatPrice } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
-
-const BARGAIN_STATUS_LABEL: Record<string, string> = {
-  PENDING: "待处理",
-  ACCEPTED: "已同意",
-  REJECTED: "已拒绝"
-};
+import { bargainStatusLabel, listingStatusLabel } from "@/lib/status-label";
 
 function statusTone(status: string) {
   if (status === "ACCEPTED") {
@@ -33,13 +28,6 @@ export default async function MyBargainsPage() {
         }
       },
       include: {
-        user: {
-          select: {
-            id: true,
-            nickname: true,
-            phone: true
-          }
-        },
         listing: {
           select: {
             id: true,
@@ -61,13 +49,7 @@ export default async function MyBargainsPage() {
             id: true,
             title: true,
             priceCents: true,
-            status: true,
-            seller: {
-              select: {
-                nickname: true,
-                phone: true
-              }
-            }
+            status: true
           }
         }
       },
@@ -114,7 +96,6 @@ export default async function MyBargainsPage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold text-slate-900">{item.listing.title}</p>
-                  <p className="text-xs text-slate-500 mt-1">买家：{item.user.nickname}（{item.user.phone}）</p>
                 </div>
                 <p className="text-lg font-black text-[#1f5fc6] whitespace-nowrap">¥{formatPrice(item.listing.priceCents)}</p>
               </div>
@@ -124,14 +105,16 @@ export default async function MyBargainsPage() {
                   {item.status === "PENDING" ? <Clock3 size={13} className="mr-1" /> : null}
                   {item.status === "ACCEPTED" ? <CheckCircle2 size={13} className="mr-1" /> : null}
                   {item.status === "REJECTED" ? <XCircle size={13} className="mr-1" /> : null}
-                  {BARGAIN_STATUS_LABEL[item.status] || item.status}
+                  {bargainStatusLabel(item.status)}
                 </span>
-                <span className="badge !h-7 !px-3 !text-xs">账号状态：{item.listing.status}</span>
+                <span className="badge !h-7 !px-3 !text-xs">账号状态：{listingStatusLabel(item.listing.status)}</span>
               </div>
 
               <div className="rounded-xl border border-[#dbe7f8] bg-[#f8fbff] p-3 text-sm text-slate-600">
-                <p className="font-medium text-slate-700">砍价留言</p>
-                <p className="mt-1 leading-relaxed">{item.message || "（无留言）"}</p>
+                <p className="font-medium text-slate-700">买家砍价金额</p>
+                <p className="mt-1 leading-relaxed text-base font-semibold text-[#184a9b]">
+                  {item.offerPriceCents ? `¥${formatPrice(item.offerPriceCents)}` : "未填写"}
+                </p>
               </div>
 
               <div className="text-xs text-slate-500 space-y-1">
@@ -164,7 +147,6 @@ export default async function MyBargainsPage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold text-slate-900">{item.listing.title}</p>
-                  <p className="text-xs text-slate-500 mt-1">卖家：{item.listing.seller.nickname}（{item.listing.seller.phone}）</p>
                 </div>
                 <p className="text-lg font-black text-[#1f5fc6] whitespace-nowrap">¥{formatPrice(item.listing.priceCents)}</p>
               </div>
@@ -174,14 +156,16 @@ export default async function MyBargainsPage() {
                   {item.status === "PENDING" ? <Clock3 size={13} className="mr-1" /> : null}
                   {item.status === "ACCEPTED" ? <CheckCircle2 size={13} className="mr-1" /> : null}
                   {item.status === "REJECTED" ? <CircleSlash size={13} className="mr-1" /> : null}
-                  {BARGAIN_STATUS_LABEL[item.status] || item.status}
+                  {bargainStatusLabel(item.status)}
                 </span>
-                <span className="badge !h-7 !px-3 !text-xs">账号状态：{item.listing.status}</span>
+                <span className="badge !h-7 !px-3 !text-xs">账号状态：{listingStatusLabel(item.listing.status)}</span>
               </div>
 
               <div className="rounded-xl border border-[#dbe7f8] bg-[#f8fbff] p-3 text-sm text-slate-600">
-                <p className="font-medium text-slate-700">我的留言</p>
-                <p className="mt-1 leading-relaxed">{item.message || "（无留言）"}</p>
+                <p className="font-medium text-slate-700">我的砍价金额</p>
+                <p className="mt-1 leading-relaxed text-base font-semibold text-[#184a9b]">
+                  {item.offerPriceCents ? `¥${formatPrice(item.offerPriceCents)}` : "未填写"}
+                </p>
               </div>
 
               <div className="text-xs text-slate-500 space-y-1">

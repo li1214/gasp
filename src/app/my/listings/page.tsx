@@ -4,6 +4,7 @@ import { ListingOwnerActions } from "@/components/listing-owner-actions";
 import { cnDate, formatPrice } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
+import { listingStatusLabel } from "@/lib/status-label";
 
 export default async function MyListingsPage() {
   const user = await requireUser();
@@ -40,7 +41,7 @@ export default async function MyListingsPage() {
           </div>
 
           <div className="text-xs text-slate-500">
-            <p>状态：{item.status}</p>
+            <p>状态：{listingStatusLabel(item.status)}</p>
             <p>创建：{cnDate(item.createdAt)}</p>
             {item.rejectReason ? <p>驳回：{item.rejectReason}</p> : null}
           </div>

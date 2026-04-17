@@ -5,6 +5,7 @@ import { ListingDetailGallery } from "@/components/listing-detail-gallery";
 import { cnDate, formatPrice } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
+import { listingStatusLabel } from "@/lib/status-label";
 
 function valueText(value: string | number | null | undefined) {
   if (value === null || value === undefined || value === "") {
@@ -132,7 +133,7 @@ export default async function ListingDetailPage({
           </section>
 
           <div className="text-xs text-slate-500">
-            <p>状态：{listing.status}</p>
+            <p>状态：{listingStatusLabel(listing.status)}</p>
             <p>发布时间：{listing.publishedAt ? cnDate(listing.publishedAt) : "未上架"}</p>
             {listing.rejectReason ? <p>驳回原因：{listing.rejectReason}</p> : null}
           </div>

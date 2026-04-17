@@ -1,4 +1,6 @@
-﻿import { redirect } from "next/navigation";
+﻿import Link from "next/link";
+import { redirect } from "next/navigation";
+import { ListChecks, Users } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
@@ -49,6 +51,15 @@ export default async function ConsoleDashboardPage() {
             <p className="console-stat-value">{item.value}</p>
           </article>
         ))}
+      </section>
+
+      <section className="grid grid-cols-2 gap-2">
+        <Link href="/console/listings" className="console-mobile-link">
+          <ListChecks size={16} /> 进入账号管理
+        </Link>
+        <Link href="/console/users" className="console-mobile-link">
+          <Users size={16} /> 进入用户管理
+        </Link>
       </section>
 
       <section className="console-panel">

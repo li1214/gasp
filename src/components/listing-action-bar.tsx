@@ -83,13 +83,21 @@ export function ListingActionBar({
       return;
     }
 
-    const message = window.prompt("可填写砍价留言（可选）", "有诚意购买，希望优惠一点");
+    const offerPriceInput = window.prompt("请输入你的砍价金额（单位：元）", "");
+    if (offerPriceInput === null) {
+      return;
+    }
+    const offerPrice = Number(offerPriceInput.trim());
+    if (!Number.isFinite(offerPrice) || offerPrice <= 0) {
+      window.alert("请输入有效的砍价金额");
+      return;
+    }
     setLoading("bargain");
 
     const response = await fetch(`/api/listings/${listingId}/bargain`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: message || "" })
+      body: JSON.stringify({ offerPrice })
     });
     const result = await readResponseJson<BargainResult>(response);
     setLoading("");

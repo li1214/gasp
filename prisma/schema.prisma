@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  OFFLINE
+  SOLD
+}
+
+enum AuditAction {
+  SUBMIT
+  APPROVE
+  REJECT
+  OFFLINE
+  MARK_SOLD
+}
+
+enum ListingAccountType {
+  LINGXI_OFFICIAL
+  CHANNEL
+}
+
+model User {
+  id             String        @id @default(cuid())
+  phone          String        @unique
+  nickname       String
+  avatarUrl      String?
+  passwordHash   String
+  realName       String?
+  idCardNo       String?
+  verifiedAt     DateTime?
+  role           UserRole      @default(USER)
+  status         UserStatus    @default(ACTIVE)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  listings       Listing[]
+  audits         ListingAudit[]
+  favorites      Favorite[]
+  bargainRecords Bargain[]
+}
+
+model Listing {
+  id                     String             @id @default(cuid())
+  sellerId               String
+  gameName               String             @default("三国志战略版")
+  accountType            ListingAccountType
+  supportBargain         Boolean            @default(false)
+  priceCents             Int
+  title                  String
+  coverImageUrl          String
+  description            String?            @db.Text
+  constructionDesc       String?            @db.Text
+  seasonStartDate        DateTime?
+  commanderLevel         Int?
+  jadeCount              Int?
+  goldPigCount           Int?
+  orangeGeneralCount     Int?
+  collectionGeneralCount Int?
+  juncaiValue            Int?
+  heroSkinCount          Int?
+  marchEffect            String?
+  mainCityAppearance     String?
+  orangeEquipmentCount   Int?
+  sTacticCount           Int?
+  seasonServer           String?
+  serverName             String?
+  hasBigTransfer         Boolean            @default(false)
+  contactInfo            String
+  isRecommended          Boolean            @default(false)
+  status                 ListingStatus      @default(DRAFT)
+  rejectReason           String?
+  viewCount              Int                @default(0)
+  favoriteCount          Int                @default(0)
+  publishedAt            DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  seller                 User               @relation(fields: [sellerId], references: [id])
+  images                 ListingImage[]
+  audits                 ListingAudit[]
+  favorites              Favorite[]
+  bargains               Bargain[]
+
+  @@index([status, createdAt])
+  @@index([isRecommended, status])
+  @@index([priceCents])
+  @@index([accountType])
+}
+
+model ListingImage {
+  id        String   @id @default(cuid())
+  listingId String
+  imageUrl  String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, sortOrder])
+}
+
+model ListingAudit {
+  id        String      @id @default(cuid())
+  listingId String
+  adminId   String?
+  action    AuditAction
+  reason    String?
+  createdAt DateTime    @default(now())
+  listing   Listing     @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  admin     User?       @relation(fields: [adminId], references: [id])
+
+  @@index([listingId, createdAt])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([listingId])
+}
+
+model Bargain {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  message   String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, createdAt])
+}
+
+model Captcha {
+  id        String   @id
+  scene     String
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+  @@index([scene, createdAt])
+}
+
+model SiteConfig {
+  id                 Int      @id
+  customerServiceUrl String?
+  userGroupUrl       String?
+  publishNotice      String?  @db.Text
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}

@@ -1,0 +1,61 @@
+import bcrypt from "bcryptjs";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+const DEFAULT_NOTICE = `账号发布须知
+
+1. 本平台仅用于“三国志战略版”账号信息展示，不参与任何交易、转账、代收代付。
+2. 禁止未成年人发布账号信息。发布人需年满18周岁并具备完全民事行为能力。
+3. 发布人须保证所填信息真实有效，不得发布盗号、黑号、找回风险号或虚假信息。
+4. 严禁发布违法违规内容，包括但不限于诈骗、洗钱、涉黄涉赌涉毒等内容。
+5. 请勿在平台内诱导私下交易；因私下交易造成的损失由双方自行承担。
+6. 平台有权对违规信息进行下架、封禁账号，并配合相关部门调查。
+7. 一经发布即视为已阅读并同意本须知。`;
+
+async function main() {
+  const adminPhone = process.env.ADMIN_PHONE;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  await prisma.siteConfig.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      id: 1,
+      publishNotice: DEFAULT_NOTICE
+    }
+  });
+
+  if (!adminPhone || !adminPassword) {
+    console.log("Skip admin seed: missing ADMIN_PHONE or ADMIN_PASSWORD");
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(adminPassword, 10);
+
+  await prisma.user.upsert({
+    where: { phone: adminPhone },
+    update: {
+      role: "ADMIN",
+      passwordHash,
+      status: "ACTIVE"
+    },
+    create: {
+      phone: adminPhone,
+      nickname: "平台管理员",
+      role: "ADMIN",
+      passwordHash
+    }
+  });
+
+  console.log("Seed done.");
+}
+
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# next.js build outputs
+.next/
+out/
+
+# local env files
+.env
+.env.local
+.env.*.local
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# typescript
+*.tsbuildinfo
+
+# local operational notes / potentially sensitive files
+服务器信息.txt
+数据库基础信息.txt
+存在问题.txt

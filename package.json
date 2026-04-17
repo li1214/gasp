@@ -10,7 +10,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
-    "publish": "python scripts/deploy_server.py --host 124.222.47.83 --user ubuntu --password Lgz1214. --db-password Lgz1214. --port 3001"
+    "publish": "sh scripts/publish.sh"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",

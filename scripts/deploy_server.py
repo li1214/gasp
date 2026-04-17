@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import deque
 import datetime as dt
 import fnmatch
 import os
@@ -10,6 +11,7 @@ import shlex
 import sys
 import tarfile
 import tempfile
+import time
 from pathlib import Path
 
 import paramiko
@@ -121,17 +123,74 @@ def run_remote(ssh: paramiko.SSHClient, command: str, *, label: str, check: bool
     print(f"\n>>> {label}")
     print(f"$ {command}")
     stdin, stdout, stderr = ssh.exec_command(command, get_pty=True)
-    out = stdout.read().decode("utf-8", errors="ignore")
-    err = stderr.read().decode("utf-8", errors="ignore")
-    code = stdout.channel.recv_exit_status()
+    channel = stdout.channel
+    recent_lines: deque[str] = deque(maxlen=80)
+    pending = ""
 
-    if out.strip():
-        print(_safe_text(out.strip()))
-    if err.strip():
-        print(_safe_text(err.strip()), file=sys.stderr)
+    while True:
+        made_progress = False
+
+        while channel.recv_ready():
+            data = channel.recv(4096)
+            if not data:
+                break
+            text = _safe_text(data.decode("utf-8", errors="ignore"))
+            print(text, end="", flush=True)
+            pending += text
+            parts = pending.splitlines(keepends=True)
+            pending = ""
+            if parts and not (parts[-1].endswith("\n") or parts[-1].endswith("\r")):
+                pending = parts.pop()
+            for line in parts:
+                recent_lines.append(line.rstrip("\r\n"))
+            made_progress = True
+
+        while channel.recv_stderr_ready():
+            data = channel.recv_stderr(4096)
+            if not data:
+                break
+            text = _safe_text(data.decode("utf-8", errors="ignore"))
+            print(text, end="", file=sys.stderr, flush=True)
+            pending += text
+            parts = pending.splitlines(keepends=True)
+            pending = ""
+            if parts and not (parts[-1].endswith("\n") or parts[-1].endswith("\r")):
+                pending = parts.pop()
+            for line in parts:
+                recent_lines.append(line.rstrip("\r\n"))
+            made_progress = True
+
+        if channel.exit_status_ready():
+            while channel.recv_ready():
+                data = channel.recv(4096)
+                if not data:
+                    break
+                text = _safe_text(data.decode("utf-8", errors="ignore"))
+                print(text, end="", flush=True)
+            while channel.recv_stderr_ready():
+                data = channel.recv_stderr(4096)
+                if not data:
+                    break
+                text = _safe_text(data.decode("utf-8", errors="ignore"))
+                print(text, end="", file=sys.stderr, flush=True)
+            break
+
+        if not made_progress:
+            time.sleep(0.1)
+
+    code = channel.recv_exit_status() if channel.exit_status_ready() else -1
+    if pending:
+        recent_lines.append(pending.rstrip("\r\n"))
 
     if check and code != 0:
-        raise RuntimeError(f"Remote command failed (exit={code}): {label}")
+        tail = "\n".join(line for line in recent_lines if line.strip())
+        if code == -1:
+            raise RuntimeError(
+                f"Remote command failed (exit=-1): {label}. "
+                "SSH channel closed unexpectedly (possible network drop or remote OOM/process kill).\n"
+                f"Recent output:\n{tail}"
+            )
+        raise RuntimeError(f"Remote command failed (exit={code}): {label}\nRecent output:\n{tail}")
 
 
 def upload_text(sftp: paramiko.SFTPClient, remote_path: str, content: str) -> None:
@@ -181,6 +240,9 @@ def main() -> int:
             allow_agent=False,
             timeout=20
         )
+        transport = ssh.get_transport()
+        if transport is not None:
+            transport.set_keepalive(30)
 
         run_remote(ssh, "node -v && npm -v && pm2 -v", label="Check remote runtime")
 
@@ -196,25 +258,33 @@ def main() -> int:
         sql = f"CREATE DATABASE IF NOT EXISTS {args.db_name} DEFAULT CHARACTER SET utf8mb4;"
         sql_cmd = f"mysql -u{args.db_user} -p{shlex.quote(args.db_password)} -e {shlex.quote(sql)}"
 
-        deploy_cmd = " && ".join(
-            [
-                f"mkdir -p {shlex.quote(args.remote_dir)}",
-                f"tar -xzf {shlex.quote(remote_archive)} -C {shlex.quote(args.remote_dir)}",
-                f"cp {shlex.quote(remote_env)} {shlex.quote(posixpath.join(args.remote_dir, '.env'))}",
-                f"cd {shlex.quote(args.remote_dir)}",
-                f"({sql_cmd} || true)",
-                "npm install --no-audit --no-fund",
-                "npm run prisma:generate",
-                "npx prisma db push --skip-generate",
-                "npm run build",
-                f"(pm2 delete {shlex.quote(args.app_name)} || true)",
-                f"pm2 start ./node_modules/next/dist/bin/next --name {shlex.quote(args.app_name)} -- start -p {shlex.quote(str(args.port))}",
-                "pm2 save",
-                f"pm2 status {shlex.quote(args.app_name)}"
-            ]
-        )
+        remote_dir = shlex.quote(args.remote_dir)
+        app_name = shlex.quote(args.app_name)
+        app_port = shlex.quote(str(args.port))
+        remote_env_target = shlex.quote(posixpath.join(args.remote_dir, ".env"))
+        remote_archive_q = shlex.quote(remote_archive)
+        remote_env_q = shlex.quote(remote_env)
 
-        run_remote(ssh, deploy_cmd, label="Deploy application")
+        deploy_steps = [
+            ("Prepare remote directory", f"mkdir -p {remote_dir}"),
+            ("Extract release archive", f"tar -xzf {remote_archive_q} -C {remote_dir}"),
+            ("Write remote .env", f"cp {remote_env_q} {remote_env_target}"),
+            ("Ensure database exists", f"cd {remote_dir} && ({sql_cmd} || true)"),
+            ("Install dependencies", f"cd {remote_dir} && npm install --no-audit --no-fund"),
+            ("Generate Prisma client", f"cd {remote_dir} && npm run prisma:generate"),
+            ("Push Prisma schema", f"cd {remote_dir} && npx prisma db push --skip-generate"),
+            ("Build application", f"cd {remote_dir} && npm run build"),
+            (
+                "Restart PM2 process",
+                f"cd {remote_dir} && (pm2 delete {app_name} || true) && "
+                f"pm2 start ./node_modules/next/dist/bin/next --name {app_name} -- start -p {app_port}",
+            ),
+            ("Save PM2 process list", "pm2 save"),
+            ("Check PM2 status", f"pm2 status {app_name}"),
+        ]
+
+        for step_label, step_cmd in deploy_steps:
+            run_remote(ssh, step_cmd, label=step_label)
         health_cmd = (
             "for i in $(seq 1 15); do "
             f"curl -I --max-time 5 http://127.0.0.1:{shlex.quote(str(args.port))} && exit 0; "

@@ -3,9 +3,11 @@ import { redirect } from "next/navigation";
 import {
   BadgeCheck,
   ChevronRight,
+  Heart,
   KeyRound,
   LayoutDashboard,
   LogOut,
+  MessageCircleQuestion,
   PackageSearch,
   PlusSquare,
   UserPen
@@ -44,6 +46,16 @@ export default async function MyPage() {
 
         <Link href="/my/listings" className="menu-row">
           <span className="menu-left"><PackageSearch size={17} /> 我的发布</span>
+          <ChevronRight size={16} />
+        </Link>
+
+        <Link href="/my/favorites" className="menu-row">
+          <span className="menu-left"><Heart size={17} /> 我的收藏</span>
+          <ChevronRight size={16} />
+        </Link>
+
+        <Link href="/my/bargains" className="menu-row">
+          <span className="menu-left"><MessageCircleQuestion size={17} /> 我的砍价</span>
           <ChevronRight size={16} />
         </Link>
 

@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import {
   BadgeCheck,
+  BellRing,
   ChevronRight,
   Heart,
   KeyRound,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { LogoutButton } from "@/components/logout-button";
+import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 
 export default async function MyPage() {
@@ -23,6 +25,12 @@ export default async function MyPage() {
   }
 
   const verified = Boolean(user.verifiedAt && user.realName && user.idCardNo);
+  const unreadNotificationCount = await prisma.notification.count({
+    where: {
+      userId: user.id,
+      isRead: false
+    }
+  });
 
   return (
     <main className="shell space-y-4">
@@ -57,6 +65,17 @@ export default async function MyPage() {
         <Link href="/my/bargains" className="menu-row">
           <span className="menu-left"><MessageCircleQuestion size={17} /> 我的砍价</span>
           <ChevronRight size={16} />
+        </Link>
+
+        <Link href="/my/notifications" className="menu-row">
+          <span className="menu-left"><BellRing size={17} /> 站内消息</span>
+          {unreadNotificationCount > 0 ? (
+            <span className="badge !h-6 !px-2 !text-[11px] !border-[#a9d5bd] !bg-[#e9fff3] !text-[#1c6f43]">
+              未读 {unreadNotificationCount}
+            </span>
+          ) : (
+            <ChevronRight size={16} />
+          )}
         </Link>
 
         <Link href="/my/profile" className="menu-row">

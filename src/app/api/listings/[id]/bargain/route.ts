@@ -35,6 +35,19 @@ export async function POST(
 
   const payload = await request.json().catch(() => ({}));
 
+  const pending = await prisma.bargain.findFirst({
+    where: {
+      userId: user.id,
+      listingId: params.id,
+      status: "PENDING"
+    },
+    select: { id: true }
+  });
+
+  if (pending) {
+    return NextResponse.json({ error: "你已提交过砍价申请，请等待卖家处理" }, { status: 409 });
+  }
+
   await prisma.bargain.create({
     data: {
       userId: user.id,

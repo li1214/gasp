@@ -39,6 +39,18 @@ enum ListingAccountType {
   CHANNEL
 }
 
+enum BargainStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum NotificationType {
+  BARGAIN_ACCEPTED
+  BARGAIN_REJECTED
+  SYSTEM
+}
+
 model User {
   id             String        @id @default(cuid())
   phone          String        @unique
@@ -56,6 +68,7 @@ model User {
   audits         ListingAudit[]
   favorites      Favorite[]
   bargainRecords Bargain[]
+  notifications  Notification[]
 }
 
 model Listing {
@@ -146,11 +159,31 @@ model Bargain {
   userId    String
   listingId String
   message   String?
+  status    BargainStatus @default(PENDING)
+  handledAt DateTime?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
   @@index([listingId, createdAt])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType @default(SYSTEM)
+  title     String
+  content   String           @db.Text
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  bargainId String?
+  listingId String?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@index([bargainId])
+  @@index([listingId])
 }
 
 model Captcha {

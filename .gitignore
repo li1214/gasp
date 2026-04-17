@@ -9,6 +9,7 @@ out/
 .env
 .env.local
 .env.*.local
+.env.__publish_tmp
 
 # logs
 npm-debug.log*
@@ -18,6 +19,8 @@ pnpm-debug.log*
 
 # typescript
 *.tsbuildinfo
+__pycache__/
+*.pyc
 
 # local operational notes / potentially sensitive files
 服务器信息.txt
